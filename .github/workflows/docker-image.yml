@@ -1,4 +1,4 @@
-name: Build and Scan Docker Image
+name: Build, Scan, and Push Docker Image
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build-and-scan:
-    name: Build and Scan
+  build-scan-push:
+    name: Build, Scan, and Push
     runs-on: ubuntu-latest
     
     # Required permissions to upload scan results to the GitHub Security tab
@@ -18,25 +18,44 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@b167a82bde133d74d472021de2dee1fa69624d47 # v3.10.0
 
-      - name: Build Docker Image
-        run: |
-          docker build -t my-app:${{ github.sha }} .
+      - name: Log in to Docker Hub
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image locally
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          load: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ github.sha }}
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c6d4b06 # v0.28.0 (pinned release commit)
         with:
-          image-ref: 'my-app:${{ github.sha }}'
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ github.sha }}'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
+          exit-code: '1' # Fails the pipeline if CRITICAL or HIGH bugs are found
 
       - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        if: always() # Ensures results upload even if vulnerabilities break the build
+        uses: github/codeql-action/upload-sarif@b56ba49b26e50535fa1e7f7db0f4f7b4bf65d80d # v3.28.10
+        if: always() # Ensures results upload even if the scanner fails the build
         with:
           sarif_file: 'trivy-results.sarif'
+
+      - name: Push Docker Image to Docker Hub
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-app:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/my-app:latest
