@@ -5,7 +5,7 @@ WORKDIR /build
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --target=/build/dependencies -r requirements.txt
 
-FROM --platform=linux/arm64cgr.dev/chainguard/python@sha256:1f37785e5cdb70151f36aaa15e1e3cef4571424dbefbf4b0d8a9222535cb13ff
+FROM --platform=linux/arm64 cgr.dev/chainguard/python@sha256:1f37785e5cdb70151f36aaa15e1e3cef4571424dbefbf4b0d8a9222535cb13ff
 
 WORKDIR /app
 
