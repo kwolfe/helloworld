@@ -1,11 +1,11 @@
-FROM cgr.dev/chainguard/python@sha256:c23539f80289046e2fa734d3f3fc418833fc22d064a50cc43fa9a6edc28c1615 AS builder
+FROM --platform=linux/arm64 cgr.dev/chainguard/python@sha256:c23539f80289046e2fa734d3f3fc418833fc22d064a50cc43fa9a6edc28c1615 AS builder
 
 WORKDIR /build
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --target=/build/dependencies -r requirements.txt
 
-FROM cgr.dev/chainguard/python@sha256:1f37785e5cdb70151f36aaa15e1e3cef4571424dbefbf4b0d8a9222535cb13ff
+FROM --platform=linux/arm64cgr.dev/chainguard/python@sha256:1f37785e5cdb70151f36aaa15e1e3cef4571424dbefbf4b0d8a9222535cb13ff
 
 WORKDIR /app
 
